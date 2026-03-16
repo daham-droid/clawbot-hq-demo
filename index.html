@@ -1,0 +1,1050 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>ClawBot HQ - v4 Learning</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #1a202c;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 10px;
+            min-height: 100vh;
+        }
+        .header { text-align: center; margin-bottom: 10px; }
+        .title { font-size: 24px; color: #fbbf24; }
+        .subtitle { font-size: 11px; color: #a0aec0; }
+        
+        .main-layout {
+            display: grid;
+            grid-template-columns: 500px 220px 220px;
+            gap: 10px;
+            width: 100%;
+            max-width: 960px;
+        }
+        
+        .column { display: flex; flex-direction: column; gap: 10px; }
+        
+        .office-container {
+            border: 4px solid #fbbf24;
+            border-radius: 4px;
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(251, 191, 36, 0.3), 0 0 40px rgba(251, 191, 36, 0.1);
+        }
+        .office {
+            width: 500px;
+            height: 333px;
+            background: url('clawbot-office-topdown.svg');
+            background-size: 500px 333px;
+            image-rendering: pixelated;
+            position: relative;
+        }
+        .agent {
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            image-rendering: pixelated;
+            cursor: pointer;
+            z-index: 10;
+        }
+        .agent:hover { transform: scale(1.2); }
+        
+        .speech-bubble {
+            position: absolute;
+            bottom: 35px;
+            left: -10px;
+            background: #fff;
+            color: #1a202c;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-size: 10px;
+            max-width: 150px;
+            display: none;
+            border: 2px solid #4a5568;
+            box-shadow: 2px 2px 0 #1a202c;
+            z-index: 30;
+        }
+        .speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 15px;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid #4a5568;
+        }
+        
+        .panel-section {
+            background: #2d3748;
+            border: 2px solid #4a5568;
+            border-radius: 4px;
+            padding: 10px;
+        }
+        .panel-section h3 {
+            font-size: 12px;
+            color: #fbbf24;
+            margin-bottom: 8px;
+            border-bottom: 1px solid #4a5568;
+            padding-bottom: 4px;
+        }
+        
+        .chat-log {
+            height: 100px;
+            overflow-y: auto;
+            font-size: 10px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            padding: 6px;
+        }
+        .chat-entry { padding: 2px 0; }
+        
+        .btn {
+            padding: 6px 12px;
+            background: #48bb78;
+            border: none;
+            border-radius: 4px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .btn:disabled { background: #4a5568; cursor: not-allowed; }
+        .btn-stop { background: #e53e3e; }
+        
+        input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 4px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 10px;
+            margin-bottom: 6px;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 80px;
+            background: #0d1117;
+            border: 1px solid #30363d;
+            color: #fff;
+            font-family: monospace;
+            font-size: 9px;
+            padding: 6px;
+            border-radius: 4px;
+            resize: none;
+        }
+        
+        .upgrade-visual {
+            position: absolute;
+            display: none;
+            z-index: 5;
+        }
+        
+        @keyframes steam {
+            0% { transform: translateY(0) scale(1); opacity: 0.6; }
+            100% { transform: translateY(-15px) scale(1.5); opacity: 0; }
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-2px); }
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        @keyframes sparkle {
+            0%, 100% { opacity: 0; transform: scale(0); }
+            50% { opacity: 1; transform: scale(1); }
+        }
+        
+        .agent {
+            animation: float 4s ease-in-out infinite;
+            transition: left 0.5s ease-out, top 0.5s ease-out;
+        }
+        
+        .agent:nth-child(2) { animation-delay: 0.8s; }
+        .agent:nth-child(3) { animation-delay: 1.6s; }
+        .agent:nth-child(4) { animation-delay: 2.4s; }
+        .agent:nth-child(5) { animation-delay: 3.2s; }
+        
+        .upgrade-visual {
+            animation: pulse 4s ease-in-out infinite;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">CLAWBOT HQ</div>
+        <div class="subtitle">v4 - Learning Edition</div>
+    </div>
+    
+    <div class="main-layout">
+        <!-- COLUMN 1: Office -->
+        <div class="column">
+            <div class="office-container">
+                <div class="office" id="office">
+                    <!-- Visual Upgrades -->
+                    <div id="visual-coffee" class="upgrade-visual" style="left: 340px; top: 200px;">
+                        <div style="width: 25px; height: 35px; background: #4a5568; border-radius: 4px; position: relative;">
+                            <div style="width: 18px; height: 15px; background: #2d3748; margin: 3px auto; border-radius: 2px;"></div>
+                            <div style="width: 5px; height: 8px; background: #718096; position: absolute; top: -7px; left: 10px; border-radius: 4px 4px 0 0;"></div>
+                            <div class="steam" style="position: absolute; top: -14px; left: 6px; width: 4px; height: 4px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: steam 2s infinite;"></div>
+                            <div class="steam" style="position: absolute; top: -18px; left: 12px; width: 4px; height: 4px; background: rgba(255,255,255,0.6); border-radius: 50%; animation: steam 2s infinite 0.5s;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-desk" class="upgrade-visual" style="left: 30px; top: 50px;">
+                        <div style="width: 90px; height: 8px; background: #8B4513; border-radius: 2px; border: 2px solid #5c3a0c; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>
+                    </div>
+                    
+                    <div id="visual-monitors" class="upgrade-visual" style="left: 0; top: 0; width: 100%; height: 100%;">
+                        <div style="position: absolute; left: 45px; top: 45px; display: flex; gap: 2px;">
+                            <div style="width: 15px; height: 12px; background: #1a202c; border: 1px solid #4a5568;"></div>
+                            <div style="width: 15px; height: 12px; background: #1a202c; border: 1px solid #4a5568;"></div>
+                        </div>
+                        <div style="position: absolute; left: 395px; top: 45px; display: flex; gap: 2px;">
+                            <div style="width: 15px; height: 12px; background: #1a202c; border: 1px solid #4a5568;"></div>
+                            <div style="width: 15px; height: 12px; background: #1a202c; border: 1px solid #4a5568;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-whiteboard" class="upgrade-visual" style="left: 150px; top: 5px;">
+                        <div style="width: 80px; height: 20px; background: #f7fafc; border: 2px solid #4a5568; border-radius: 2px;">
+                            <div style="margin: 2px; display: flex; gap: 3px; justify-content: center;">
+                                <div style="width: 15px; height: 5px; background: #48bb78;"></div>
+                                <div style="width: 15px; height: 5px; background: #4299e1;"></div>
+                                <div style="width: 15px; height: 5px; background: #e53e3e;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-plants" class="upgrade-visual" style="left: 10px; top: 300px;">
+                        <div style="display: flex; gap: 5px;">
+                            <div style="width: 15px; height: 20px; background: #2f855a; border-radius: 0 0 50% 50%;"></div>
+                            <div style="width: 12px; height: 15px; background: #48bb78; border-radius: 50% 50% 0 0; margin-top: -8px;"></div>
+                            <div style="width: 15px; height: 25px; background: #2f855a; border-radius: 0 0 50% 50%;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-lounge" class="upgrade-visual" style="left: 280px; top: 220px;">
+                        <div style="width: 60px; height: 30px; background: #744210; border-radius: 6px 6px 0 0; position: relative;">
+                            <div style="position: absolute; top: -10px; left: 8px; width: 44px; height: 15px; background: #975a16; border-radius: 6px 6px 0 0;"></div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-server" class="upgrade-visual" style="left: 30px; top: 150px;">
+                        <div style="width: 20px; height: 35px; background: #1a202c; border: 2px solid #4a5568; border-radius: 4px;">
+                            <div style="margin: 2px;">
+                                <div style="width: 12px; height: 3px; background: #48bb78; margin: 2px 0;"></div>
+                                <div style="width: 12px; height: 3px; background: #48bb78; margin: 2px 0;"></div>
+                                <div style="width: 12px; height: 3px; background: #e53e3e; margin: 2px 0;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div id="visual-neon" class="upgrade-visual" style="left: 360px; top: 8px;">
+                        <div style="width: 100px; height: 16px; background: #f0f; border-radius: 8px; box-shadow: 0 0 15px #f0f, 0 0 30px #f0f; color: #fff; font-size: 8px; text-align: center; line-height: 16px; font-weight: bold;">CLAWBOT HQ</div>
+                    </div>
+                    
+                    <!-- Agents -->
+                    <div class="agent" id="scout" style="left: 60px; top: 60px; background: url('agent-scout.svg'); background-size: cover;">
+                        <div class="speech-bubble" id="scout-bubble"></div>
+                    </div>
+                    <div class="agent" id="scribe" style="left: 60px; top: 170px; background: url('agent-scribe.svg'); background-size: cover;">
+                        <div class="speech-bubble" id="scribe-bubble"></div>
+                    </div>
+                    <div class="agent" id="director" style="left: 235px; top: 145px; background: url('agent-director.svg'); background-size: cover;">
+                        <div class="speech-bubble" id="director-bubble"></div>
+                    </div>
+                    <div class="agent" id="architect" style="left: 410px; top: 60px; background: url('agent-architect.svg'); background-size: cover;">
+                        <div class="speech-bubble" id="architect-bubble"></div>
+                    </div>
+                    <div class="agent" id="analyst" style="left: 60px; top: 280px; background: url('agent-analyst.svg'); background-size: cover;">
+                        <div class="speech-bubble" id="analyst-bubble"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- COLUMN 2: Stats & Chat -->
+        <div class="column">
+            <div class="panel-section">
+                <h3>Stats</h3>
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                    <div style="background: #1a202c; padding: 8px; text-align: center; border-radius: 4px;">
+                        <div style="font-size: 20px; font-weight: bold; color: #fbbf24;" id="revenue">$0</div>
+                        <div style="font-size: 9px; color: #a0aec0;">Revenue</div>
+                    </div>
+                    <div style="background: #1a202c; padding: 8px; text-align: center; border-radius: 4px;">
+                        <div style="font-size: 20px; font-weight: bold; color: #48bb78;" id="tasks">0</div>
+                        <div style="font-size: 9px; color: #a0aec0;">Tasks</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Agent Levels</h3>
+                <div id="agentStats" style="font-size: 9px;"></div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Current Focus</h3>
+                <div id="agentFocus" style="font-size: 9px;"></div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Chat Log</h3>
+                <div class="chat-log" id="chatLog"></div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Commands</h3>
+                <textarea id="cmdInput" placeholder="scout research AI trends&#10;scribe write newsletter&#10;architect build feature" style="height: 60px; font-size: 10px; margin-bottom: 6px;"></textarea>
+                <button class="btn" onclick="doCommand()">Send</button>
+            </div>
+        </div>
+        
+        <!-- COLUMN 3: Controls, Shop, Tips, Report -->
+        <div class="column">
+            <div class="panel-section">
+                <h3>Controls</h3>
+                <button class="btn" onclick="startSim()">Start</button>
+                <button class="btn btn-stop" onclick="stopSim()" style="margin-top: 6px;">Stop</button>
+                <button class="btn" onclick="resetGame()" style="margin-top: 6px; background: #718096;">Reset</button>
+                <button class="btn" onclick="importV2Save()" style="margin-top: 6px; background: #4299e1;">Import v2/v3</button>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Shop</h3>
+                <div id="shop" style="font-size: 10px;"></div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Tips</h3>
+                <div id="tips" style="font-size: 9px; color: #a0aec0;"></div>
+            </div>
+            
+            <div class="panel-section">
+                <h3>Report</h3>
+                <button class="btn" onclick="makeReport()">Generate</button>
+                <div id="reportBox" style="display: none; margin-top: 8px;">
+                    <textarea id="reportText"></textarea>
+                    <button class="btn" onclick="copyReport()" style="margin-top: 6px;">Copy</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Game State v4 - LEARNING EDITION
+        const state = {
+            revenue: 0,
+            tasks: 0,
+            running: false,
+            interval: null,
+            purchased: [],
+            // Topic memory - stores what each agent has worked on
+            topicMemory: {
+                scout: [],
+                scribe: [],
+                director: [],
+                architect: [],
+                analyst: []
+            },
+            agents: {
+                scout: { name: 'Scout', tasks: 0, revenue: 0, working: false, homeX: 60, homeY: 60, level: 1, xp: 0, totalXp: 0, focus: 'General research' },
+                scribe: { name: 'Scribe', tasks: 0, revenue: 0, working: false, homeX: 60, homeY: 170, level: 1, xp: 0, totalXp: 0, focus: 'Content creation' },
+                director: { name: 'Director', tasks: 0, revenue: 0, working: false, homeX: 235, homeY: 145, level: 1, xp: 0, totalXp: 0, focus: 'Strategy planning' },
+                architect: { name: 'Architect', tasks: 0, revenue: 0, working: false, homeX: 410, homeY: 60, level: 1, xp: 0, totalXp: 0, focus: 'Technical build' },
+                analyst: { name: 'Analyst', tasks: 0, revenue: 0, working: false, homeX: 60, homeY: 280, level: 1, xp: 0, totalXp: 0, focus: 'Data analysis' }
+            }
+        };
+        
+        const shopItems = {
+            coffee: { name: 'Coffee Machine', cost: 500, effect: '+10% speed' },
+            desk: { name: 'Standing Desk', cost: 600, effect: '+15% XP' },
+            monitors: { name: 'Dual Monitors', cost: 800, effect: '-20% task time' },
+            whiteboard: { name: 'Whiteboard', cost: 1000, effect: '+25% collab' },
+            plants: { name: 'Office Plants', cost: 1200, effect: '+10% happiness' },
+            lounge: { name: 'Lounge Area', cost: 1500, effect: '+20% collab bonus' },
+            server: { name: 'Server Rack', cost: 2000, effect: '+25% all tasks' },
+            neon: { name: 'Neon Sign', cost: 2500, effect: '+15% revenue' }
+        };
+        
+        // Contextual conversations based on topic memory
+        const contextualCollabs = {
+            'Scout-Scribe': [
+                { requires: 'AI', lines: [['Scout','Found 3 new AI tools in our research area'],['Scribe','Which ones match our focus?'],['Scout','All of them - competitors using #2'],['Scribe','Writing comparison now...']] },
+                { requires: null, lines: [['Scout','Found viral trend! +340% growth'],['Scribe','What is it?'],['Scout','AI productivity tools - hot right now'],['Scribe','Perfect angle! Writing now...']] }
+            ],
+            'Architect-Analyst': [
+                { requires: 'Canvas', lines: [['Architect','Canvas integration at 60%'],['Analyst','User engagement up 40% with it'],['Architect','Should we expand?'],['Analyst','Yes - 3 more features suggested']] },
+                { requires: null, lines: [['Architect','Dashboard loading slow...'],['Analyst','Let me check the data'],['Architect','Users waiting 5 seconds'],['Analyst','Add caching - will cut to 1s!']] }
+            ],
+            'Director-Scout': [
+                { requires: 'competitor', lines: [['Director','Competitor analysis complete?'],['Scout','Yes - they pivoted to AI'],['Director','Threat or opportunity?'],['Scout','Gap in market we can fill!']] },
+                { requires: null, lines: [['Director','Competitor analysis?'],['Scout','They raised prices 20%'],['Director','Opportunity!'],['Scout','We can capture their market!']] }
+            ]
+        };
+        
+        let collabInProgress = false;
+        
+        // ECONOMY BALANCE - Lower rewards
+        const REWARD_PER_TASK = 15;  // Was $50, now $15
+        const XP_PER_TASK = 20;      // Was 25, now 20
+        const COLLAB_REWARD = 30;    // Was $50, now $30
+        const GAME_INTERVAL = 15000; // Was 1000ms, now 15000ms (15 seconds)
+        
+        // Calculate XP needed for next level
+        function getXpForLevel(level) {
+            return Math.floor(100 * Math.pow(1.5, level - 1));
+        }
+        
+        // Check and apply level ups
+        function checkLevelUp(agent) {
+            let leveled = false;
+            while (agent.xp >= getXpForLevel(agent.level)) {
+                agent.xp -= getXpForLevel(agent.level);
+                agent.level++;
+                leveled = true;
+            }
+            return leveled;
+        }
+        
+        // Add topic to memory
+        function addTopic(agentKey, topic) {
+            if (!state.topicMemory[agentKey]) state.topicMemory[agentKey] = [];
+            state.topicMemory[agentKey].push({
+                topic: topic,
+                date: new Date().toISOString(),
+                tasks: 1
+            });
+            // Keep only last 10 topics
+            if (state.topicMemory[agentKey].length > 10) {
+                state.topicMemory[agentKey].shift();
+            }
+        }
+        
+        // Get recent topics for contextual conversations
+        function getRecentTopics(agentKey) {
+            if (!state.topicMemory[agentKey] || state.topicMemory[agentKey].length === 0) return [];
+            return state.topicMemory[agentKey].slice(-3).map(t => t.topic);
+        }
+        
+        // Init
+        function init() {
+            loadGame();
+            updateUI();
+            updateTips();
+            log('System','Ready! Starting...');
+            setTimeout(startSim, 1500);
+            setInterval(saveGame, 30000); // Save every 30 seconds
+        }
+        
+        // Save/Load
+        function saveGame() {
+            localStorage.setItem('clawbot_save_v4', JSON.stringify({
+                revenue: state.revenue,
+                tasks: state.tasks,
+                purchased: state.purchased,
+                agents: state.agents,
+                topicMemory: state.topicMemory
+            }));
+        }
+        
+        function loadGame() {
+            try {
+                let saved = localStorage.getItem('clawbot_save_v4');
+                let version = 4;
+                
+                // Migration from v3
+                if (!saved) {
+                    saved = localStorage.getItem('clawbot_save_v3');
+                    if (saved) version = 3;
+                }
+                if (!saved) {
+                    saved = localStorage.getItem('clawbot_save');
+                    if (saved) version = 2;
+                }
+                
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    state.revenue = data.revenue || 0;
+                    state.tasks = data.tasks || 0;
+                    state.purchased = data.purchased || [];
+                    state.topicMemory = data.topicMemory || { scout: [], scribe: [], director: [], architect: [], analyst: [] };
+                    
+                    if (data.agents) {
+                        for (const n in data.agents) {
+                            if (state.agents[n]) {
+                                state.agents[n].tasks = data.agents[n].tasks || 0;
+                                state.agents[n].revenue = data.agents[n].revenue || 0;
+                                state.agents[n].level = data.agents[n].level || 1;
+                                state.agents[n].xp = data.agents[n].xp || 0;
+                                state.agents[n].totalXp = data.agents[n].totalXp || 0;
+                                state.agents[n].focus = data.agents[n].focus || state.agents[n].name + ' tasks';
+                            }
+                        }
+                    }
+                    
+                    for (const item of state.purchased) showVisual(item);
+                    log('System', version === 4 ? 'Progress loaded!' : `Migrated from v${version}`);
+                }
+            } catch(e) {
+                console.error('Load error:', e);
+            }
+        }
+        
+        // Continuous animation loop
+        let frameCount = 0;
+        function animateLoop() {
+            if (!state.running) return;
+            
+            frameCount++;
+            // Move every 10 frames (6 times per second) - smooth but visible
+            if (frameCount % 10 === 0) {
+                for (const [key, agent] of Object.entries(state.agents)) {
+                    const el = document.getElementById(key);
+                    if (!el) continue;
+                    
+                    // Get current position
+                    const currentLeft = parseFloat(el.style.left) || agent.homeX;
+                    const currentTop = parseFloat(el.style.top) || agent.homeY;
+                    
+                    // Random walk (bigger steps, less frequent)
+                    const moveX = (Math.random() - 0.5) * 15;
+                    const moveY = (Math.random() - 0.5) * 15;
+                    
+                    let newLeft = currentLeft + moveX;
+                    let newTop = currentTop + moveY;
+                    
+                    // Keep near home base
+                    const maxDist = 100;
+                    const distX = newLeft - agent.homeX;
+                    const distY = newTop - agent.homeY;
+                    
+                    if (Math.abs(distX) > maxDist) newLeft = agent.homeX + (distX > 0 ? maxDist : -maxDist);
+                    if (Math.abs(distY) > maxDist) newTop = agent.homeY + (distY > 0 ? maxDist : -maxDist);
+                    
+                    // Office bounds
+                    newLeft = Math.max(40, Math.min(450, newLeft));
+                    newTop = Math.max(40, Math.min(290, newTop));
+                    
+                    el.style.left = newLeft + 'px';
+                    el.style.top = newTop + 'px';
+                }
+            }
+            
+            requestAnimationFrame(animateLoop);
+        }
+        
+        // Simulation - SLOWER PACE
+        function startSim() {
+            if (state.running) return;
+            state.running = true;
+            
+            // Game loop for tasks/collabs (15 seconds)
+            state.interval = setInterval(() => {
+                gameLoop();
+            }, GAME_INTERVAL);
+            
+            // Start continuous animation
+            animateLoop();
+            
+            log('System','Started! Tasks every 15s, smooth movement.');
+        }
+        
+        function stopSim() {
+            state.running = false;
+            clearInterval(state.interval);
+            saveGame();
+            log('System','Stopped. Saved.');
+        }
+        
+        function resetGame() {
+            if (!confirm('Reset all progress?')) return;
+            localStorage.removeItem('clawbot_save_v4');
+            location.reload();
+        }
+        
+        function importV2Save() {
+            const saves = ['clawbot_save_v3', 'clawbot_save'];
+            for (const key of saves) {
+                const saved = localStorage.getItem(key);
+                if (saved) {
+                    if (!confirm(`Import from ${key}? This will overwrite current progress.`)) return;
+                    try {
+                        const data = JSON.parse(saved);
+                        state.revenue = Math.floor((data.revenue || 0) / 3); // Adjust for new economy
+                        state.tasks = data.tasks || 0;
+                        state.purchased = data.purchased || [];
+                        
+                        if (data.agents) {
+                            for (const n in data.agents) {
+                                if (state.agents[n]) {
+                                    state.agents[n].tasks = data.agents[n].tasks || 0;
+                                    state.agents[n].revenue = Math.floor((data.agents[n].revenue || 0) / 3);
+                                    const totalXp = (data.agents[n].tasks || 0) * XP_PER_TASK;
+                                    state.agents[n].totalXp = totalXp;
+                                    let level = 1;
+                                    let xp = totalXp;
+                                    while (xp >= getXpForLevel(level)) {
+                                        xp -= getXpForLevel(level);
+                                        level++;
+                                    }
+                                    state.agents[n].level = level;
+                                    state.agents[n].xp = xp;
+                                }
+                            }
+                        }
+                        
+                        for (const item of state.purchased) showVisual(item);
+                        log('System', `Imported from ${key}: $${state.revenue}, ${state.tasks} tasks (economy adjusted)`);
+                        saveGame();
+                        updateUI();
+                        return;
+                    } catch(e) {
+                        log('System','Import failed: ' + e.message);
+                    }
+                }
+            }
+            log('System','No v2/v3 save found');
+        }
+        
+        function gameLoop() {
+            // Collaboration chance (35%)
+            if (!collabInProgress && Math.random() < 0.35) {
+                doContextualCollab();
+                return;
+            }
+            
+            const anyWorking = Object.values(state.agents).some(a => a.working);
+            if (anyWorking || collabInProgress) return;
+            
+            const keys = Object.keys(state.agents);
+            const key = keys[Math.floor(Math.random() * keys.length)];
+            const agent = state.agents[key];
+            
+            agent.working = true;
+            log(agent.name, `Working on: ${agent.focus}...`);
+            
+            setTimeout(() => {
+                agent.working = false;
+                agent.tasks++;
+                agent.revenue += REWARD_PER_TASK;
+                agent.xp += XP_PER_TASK;
+                agent.totalXp += XP_PER_TASK;
+                
+                if (checkLevelUp(agent)) {
+                    log('System', agent.name + ' leveled up to ' + agent.level + '!');
+                }
+                
+                state.tasks++;
+                state.revenue += REWARD_PER_TASK;
+                log(agent.name, `Complete! (+$${REWARD_PER_TASK} +${XP_PER_TASK} XP)`);
+                updateUI();
+                updateTips();
+            }, 4000);
+        }
+        
+        // Contextual collaboration based on topic memory
+        function doContextualCollab() {
+            if (collabInProgress) return;
+            collabInProgress = true;
+            
+            const collabKeys = Object.keys(contextualCollabs);
+            const collabKey = collabKeys[Math.floor(Math.random() * collabKeys.length)];
+            const collabOptions = contextualCollabs[collabKey];
+            
+            // Find contextual conversation or default
+            let selectedCollab = collabOptions.find(c => {
+                if (!c.requires) return false;
+                const agents = collabKey.split('-');
+                const topics1 = getRecentTopics(agents[0].toLowerCase());
+                const topics2 = getRecentTopics(agents[1].toLowerCase());
+                return topics1.some(t => t.toLowerCase().includes(c.requires.toLowerCase())) ||
+                       topics2.some(t => t.toLowerCase().includes(c.requires.toLowerCase()));
+            }) || collabOptions.find(c => !c.requires) || collabOptions[0];
+            
+            const [agentA, agentB] = collabKey.split('-');
+            log('System', agentA + ' and ' + agentB + ' collaborating...');
+            
+            let delay = 0;
+            for (const [who, msg] of selectedCollab.lines) {
+                setTimeout(() => log(who, msg), delay);
+                delay += 2000;
+            }
+            
+            setTimeout(() => {
+                log('System', `Done! (+$${COLLAB_REWARD})`);
+                state.revenue += COLLAB_REWARD;
+                state.agents[agentA.toLowerCase()].revenue += Math.floor(COLLAB_REWARD / 2);
+                state.agents[agentB.toLowerCase()].revenue += Math.floor(COLLAB_REWARD / 2);
+                updateUI();
+                collabInProgress = false;
+            }, delay + 500);
+        }
+        
+        // Agent movement
+        function moveAgents() {
+            for (const [key, agent] of Object.entries(state.agents)) {
+                const el = document.getElementById(key);
+                if (!el) continue;
+                
+                const currentLeft = parseInt(el.style.left) || agent.homeX;
+                const currentTop = parseInt(el.style.top) || agent.homeY;
+                
+                const moveX = (Math.random() - 0.5) * 60;
+                const moveY = (Math.random() - 0.5) * 60;
+                
+                let newLeft = currentLeft + moveX;
+                let newTop = currentTop + moveY;
+                
+                const maxDist = 100;
+                const distX = newLeft - agent.homeX;
+                const distY = newTop - agent.homeY;
+                
+                if (Math.abs(distX) > maxDist) newLeft = agent.homeX + (distX > 0 ? maxDist : -maxDist);
+                if (Math.abs(distY) > maxDist) newTop = agent.homeY + (distY > 0 ? maxDist : -maxDist);
+                
+                newLeft = Math.max(40, Math.min(450, newLeft));
+                newTop = Math.max(40, Math.min(290, newTop));
+                
+                el.style.left = Math.round(newLeft) + 'px';
+                el.style.top = Math.round(newTop) + 'px';
+            }
+        }
+        
+        // UI
+        function updateUI() {
+            document.getElementById('revenue').textContent = '$' + state.revenue;
+            document.getElementById('tasks').textContent = state.tasks;
+            renderShop();
+            renderAgentStats();
+            renderAgentFocus();
+        }
+        
+        function renderShop() {
+            const div = document.getElementById('shop');
+            div.innerHTML = '';
+            for (const [key, item] of Object.entries(shopItems)) {
+                const owned = state.purchased.includes(key);
+                const canBuy = state.revenue >= item.cost;
+                div.innerHTML += `
+                    <div style="background:#1a202c;padding:6px;margin:4px 0;border-radius:4px;">
+                        <div style="font-weight:bold;">${item.name}</div>
+                        <div style="font-size:9px;color:#6e7681;">${item.effect}</div>
+                        <div style="display:flex;justify-content:space-between;margin-top:4px;">
+                            <span style="color:${canBuy?'#48bb78':'#e53e3e'}">$${item.cost}</span>
+                            ${owned?'<span style="color:#48bb78;">Owned</span>':`<button class="btn" style="width:auto;padding:2px 8px;font-size:9px;" onclick="buyItem('${key}')" ${!canBuy?'disabled':''}>Buy</button>`}
+                        </div>
+                    </div>`;
+            }
+        }
+        
+        function renderAgentStats() {
+            const div = document.getElementById('agentStats');
+            div.innerHTML = '';
+            for (const [key, agent] of Object.entries(state.agents)) {
+                const xpNeeded = getXpForLevel(agent.level);
+                const xpPercent = Math.min(100, Math.round((agent.xp / xpNeeded) * 100));
+                div.innerHTML += `
+                    <div style="background: #1a202c; padding: 6px; margin: 4px 0; border-radius: 4px;">
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="font-weight: bold; color: #fbbf24;">${agent.name}</span>
+                            <span>Lv${agent.level}</span>
+                        </div>
+                        <div style="font-size: 8px; color: #a0aec0; margin-top: 2px;">
+                            ${agent.tasks} tasks | $${agent.revenue} | ${agent.totalXp} XP
+                        </div>
+                        <div style="background: #4a5568; height: 4px; border-radius: 2px; margin-top: 4px;">
+                            <div style="background: #48bb78; height: 100%; width: ${xpPercent}%; border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function renderAgentFocus() {
+            const div = document.getElementById('agentFocus');
+            div.innerHTML = '';
+            for (const [key, agent] of Object.entries(state.agents)) {
+                const recentTopics = getRecentTopics(key);
+                const topicText = recentTopics.length > 0 ? recentTopics[recentTopics.length - 1] : 'No recent topics';
+                div.innerHTML += `
+                    <div style="background: #1a202c; padding: 4px; margin: 2px 0; border-radius: 4px; font-size: 8px;">
+                        <strong>${agent.name}:</strong> ${agent.focus}
+                        ${recentTopics.length > 0 ? '<br>Recent: ' + topicText : ''}
+                    </div>
+                `;
+            }
+        }
+        
+        function updateTips() {
+            const r = state.revenue;
+            let tip = r < 500 ? `Need $${500-r} for Coffee Machine` :
+                      r < 1000 ? (!state.purchased.includes('coffee') ? 'Buy Coffee Machine!' : 'Save for Standing Desk') :
+                      state.purchased.length < 8 ? `${8 - state.purchased.length} upgrades remaining` :
+                      'All upgrades purchased! Focus on leveling agents.';
+            document.getElementById('tips').textContent = tip;
+        }
+        
+        function buyItem(key) {
+            const item = shopItems[key];
+            if (state.revenue < item.cost || state.purchased.includes(key)) return;
+            state.revenue -= item.cost;
+            state.purchased.push(key);
+            showVisual(key);
+            log('System','Bought: ' + item.name);
+            updateUI();
+            updateTips();
+            saveGame();
+        }
+        
+        function showVisual(key) {
+            const visualMap = {
+                'coffee': 'visual-coffee', 'desk': 'visual-desk', 'monitors': 'visual-monitors',
+                'whiteboard': 'visual-whiteboard', 'plants': 'visual-plants', 'lounge': 'visual-lounge',
+                'server': 'visual-server', 'neon': 'visual-neon'
+            };
+            const elementId = visualMap[key];
+            if (elementId) {
+                const el = document.getElementById(elementId);
+                if (el) el.style.display = 'block';
+            }
+        }
+        
+        // Particle effect for task completion
+        function createParticles(x, y, color = '#fbbf24') {
+            const office = document.getElementById('office');
+            for (let i = 0; i < 5; i++) {
+                const p = document.createElement('div');
+                p.style.cssText = `
+                    position: absolute;
+                    left: ${x}px;
+                    top: ${y}px;
+                    width: 4px;
+                    height: 4px;
+                    background: ${color};
+                    border-radius: 50%;
+                    pointer-events: none;
+                    z-index: 20;
+                    animation: sparkle 0.6s ease-out forwards;
+                `;
+                p.style.animationDelay = (i * 0.1) + 's';
+                office.appendChild(p);
+                setTimeout(() => p.remove(), 600);
+            }
+        }
+        
+        // Chat & Bubbles
+        function log(who, msg) {
+            const div = document.getElementById('chatLog');
+            const t = new Date().toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit'});
+            div.innerHTML += `<div class="chat-entry">[${t}] <strong>${who}:</strong> ${msg}</div>`;
+            div.scrollTop = div.scrollHeight;
+            
+            const key = Object.keys(state.agents).find(k => state.agents[k].name === who);
+            if (key) {
+                const bubble = document.getElementById(key + '-bubble');
+                if (bubble) {
+                    bubble.innerText = msg;
+                    bubble.style.display = 'block';
+                    setTimeout(() => bubble.style.display = 'none', 3000);
+                }
+                
+                // Add particles when agent completes work
+                if (msg.includes('Completed') || msg.includes('Complete')) {
+                    const el = document.getElementById(key);
+                    if (el) {
+                        const x = parseInt(el.style.left) + 16;
+                        const y = parseInt(el.style.top) + 16;
+                        createParticles(x, y);
+                    }
+                }
+            }
+        }
+        
+        // Commands with topic tracking - NOW SUPPORTS BATCH
+        function doCommand() {
+            const input = document.getElementById('cmdInput');
+            const cmdText = input.value.trim();
+            input.value = '';
+            if (!cmdText) return;
+            
+            // Split by newlines for batch commands (handles \n, \r\n, and multiple spaces)
+            const commands = cmdText.split(/\r?\n/).map(c => c.trim()).filter(c => c && !c.match(/^\s*$/));
+            
+            console.log('Batch commands detected:', commands.length, commands);
+            
+            commands.forEach(cmd => {
+                console.log('Processing command:', cmd);
+                const parts = cmd.split(' ');
+                const agent = parts[0];
+                
+                // Special commands
+                if (agent === 'clear' || agent === 'reset') {
+                    if (parts[1] === 'topics' || parts[1] === 'memory') {
+                        state.topicMemory = { scout: [], scribe: [], director: [], architect: [], analyst: [] };
+                        log('System', 'Topic memory cleared!');
+                        updateUI();
+                        saveGame();
+                        return;
+                    }
+                    if (parts[1] === 'focus') {
+                        const targetAgent = parts[2];
+                        if (state.agents[targetAgent]) {
+                            state.agents[targetAgent].focus = targetAgent + ' tasks';
+                            log('System', state.agents[targetAgent].name + ' focus cleared');
+                            updateUI();
+                            saveGame();
+                        }
+                        return;
+                    }
+                }
+                
+                const action = parts[1] || 'work';
+                const topic = parts.slice(2).join(' ') || 'general';
+                
+                if (state.agents[agent]) {
+                    // Update focus
+                    state.agents[agent].focus = topic;
+                    
+                    // Add to topic memory
+                    addTopic(agent, topic);
+                    
+                    // Complete task
+                    state.agents[agent].tasks++;
+                    state.agents[agent].revenue += REWARD_PER_TASK;
+                    state.agents[agent].xp += XP_PER_TASK;
+                    state.agents[agent].totalXp += XP_PER_TASK;
+                    
+                    if (checkLevelUp(state.agents[agent])) {
+                        log('System', state.agents[agent].name + ' leveled up to ' + state.agents[agent].level + '!');
+                        // Level up celebration particles
+                        const el = document.getElementById(agent);
+                        if (el) {
+                            const x = parseInt(el.style.left) + 16;
+                            const y = parseInt(el.style.top) + 16;
+                            createParticles(x, y, '#48bb78');
+                            createParticles(x + 10, y - 10, '#fbbf24');
+                            createParticles(x - 10, y + 10, '#4299e1');
+                        }
+                    }
+                    
+                    state.tasks++;
+                    state.revenue += REWARD_PER_TASK;
+                    log(state.agents[agent].name, `Completed: ${topic} (+$${REWARD_PER_TASK} +${XP_PER_TASK} XP)`);
+                } else if (agent) {
+                    log('System','Unknown agent: "' + agent + '" - Try: scout, scribe, director, architect, analyst');
+                }
+            });
+            
+            updateUI();
+            updateTips();
+            saveGame();
+        }
+        
+        // Report
+        function makeReport() {
+            const now = new Date().toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' });
+            
+            let r = `ClawBot HQ Daily Report - ${now}\n`;
+            r += `================================\n\n`;
+            
+            r += `📊 EXECUTIVE SUMMARY\n`;
+            r += `Revenue: $${state.revenue.toLocaleString()} | Tasks: ${state.tasks}\n`;
+            r += `Economy: $${REWARD_PER_TASK}/task | ${GAME_INTERVAL/1000}s intervals\n\n`;
+            
+            r += `👥 AGENT PERFORMANCE\n`;
+            const sorted = Object.entries(state.agents).sort((a,b) => b[1].tasks - a[1].tasks);
+            sorted.forEach(([k,a], i) => {
+                const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '  ';
+                r += `${rank} ${a.name}: Lv${a.level} | ${a.tasks} tasks | $${a.revenue} | ${a.totalXp} XP\n`;
+            });
+            
+            const top = sorted[0][1];
+            r += `\n🏆 TOP: ${top.name} - ${top.focus}\n\n`;
+            
+            r += `📚 TOPIC MEMORY (Recent Work)\n`;
+            for (const [k, topics] of Object.entries(state.topicMemory)) {
+                if (topics.length > 0) {
+                    const recent = topics.slice(-2).map(t => t.topic).join(', ');
+                    r += `${state.agents[k].name}: ${recent}\n`;
+                }
+            }
+            
+            r += `\n🏢 UPGRADES: ${state.purchased.length}/8\n`;
+            state.purchased.forEach(item => {
+                r += `✅ ${shopItems[item].name}\n`;
+            });
+            
+            r += `\n⚡ SUGGESTED COMMANDS FOR TOMORROW\n`;
+            
+            // Generate specific commands based on actual topic memory
+            const suggestions = [];
+            
+            // Get last topic for each agent
+            const getLastTopic = (agentKey) => {
+                const topics = state.topicMemory[agentKey];
+                if (topics && topics.length > 0) {
+                    return topics[topics.length - 1].topic;
+                }
+                return state.agents[agentKey].focus;
+            };
+            
+            // Scout - expand on research topic
+            const scoutTopic = getLastTopic('scout');
+            suggestions.push(`scout research ${scoutTopic}-deep-dive`);
+            
+            // Scribe - next piece of content
+            const scribeTopic = getLastTopic('scribe');
+            suggestions.push(`scribe write ${scribeTopic}-part-2`);
+            
+            // Architect - next feature phase
+            const archTopic = getLastTopic('architect');
+            suggestions.push(`architect build ${archTopic}-v2`);
+            
+            // Analyst - deeper analysis
+            const analystTopic = getLastTopic('analyst');
+            suggestions.push(`analyst analyze ${analystTopic}-trends`);
+            
+            // Director - execution phase
+            const directorTopic = getLastTopic('director');
+            suggestions.push(`director plan ${directorTopic}-roadmap`);
+            
+            suggestions.forEach(cmd => {
+                r += `${cmd}\n`;
+            });
+            
+            r += `\n🧹 UTILITY COMMANDS\n`;
+            r += `clear topics - Reset all topic memory\n`;
+            r += `clear focus [agent] - Reset agent focus\n`;
+            
+            document.getElementById('reportText').value = r;
+            document.getElementById('reportBox').style.display = 'block';
+            log('System','Report ready!');
+        }
+        
+        function copyReport() {
+            document.getElementById('reportText').select();
+            document.execCommand('copy');
+            log('System','Copied!');
+        }
+        
+        // Start
+        window.onload = init;
+    </script>
+</body>
+</html>
